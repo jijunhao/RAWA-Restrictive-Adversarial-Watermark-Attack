@@ -107,7 +107,7 @@ def attack_success(xs,targeted_attack=False):
         return True
 
 class Population:
-    def __init__(self, min_range, max_range, dim=5, g=3, p_size=50, object_func=obj_func, co=0.9):
+    def __init__(self, min_range, max_range, dim=5, g=5, p_size=50, object_func=obj_func, co=0.9):
         self.min_range = min_range  # 向量下限
         self.max_range = max_range  # 向量上限
         self.dimension = dim        # 维度
@@ -195,7 +195,7 @@ class Population:
         return self.Best_individuality
 
 def attack():
-    p = Population(min_range=[0,0,0,0.1,-180], max_range=[224, 224,1,1,180], dim=5, g=3, p_size=50, object_func=obj_func, co=0.9)
+    p = Population(min_range=[0,0,0,0.1,-180], max_range=[224, 224,1,1,180], dim=5, g=8, p_size=50, object_func=obj_func, co=0.8)
     best_x = p.evolution()
     best_attack=alphaBlending(imagepath, watermarkpath, best_x)
     return best_x,best_attack
