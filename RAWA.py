@@ -3,6 +3,7 @@ import os
 import numpy as np
 import random
 from skimage.metrics import mean_squared_error,normalized_root_mse,peak_signal_noise_ratio
+from scipy.optimize import basinhopping,dual_annealing
 import time
 
 def alphaBlending(image,watermark,xs):
@@ -106,6 +107,10 @@ def attack_success(xs,targeted_attack=False):
     if ((targeted_attack and predicted_class == target_class) or (not targeted_attack and predicted_class != target_class)):
         return True
 
+
+
+
+
 class Population:
     def __init__(self, min_range, max_range, dim=5, g=5, p_size=50, object_func=obj_func, co=0.9):
         self.min_range = min_range  # 向量下限
@@ -121,6 +126,52 @@ class Population:
         self.phi = random.randint(0, 4)
         self.epsilon = 0.025
         self.Best_individuality = []
+
+    """
+    def mymutate(self,xs, niter=1):
+        # 最小化函数
+        def predict_fn(xs):
+            return obj_func(xs)[0]
+
+        # 回调函数
+        def callback_fn(xs):
+            return attack_success(xs)
+
+        class MyTakeStep(object):
+            def __init__(self, stepsize=1):
+                self.stepsize = stepsize
+
+            def __call__(self, x):
+                s = self.stepsize
+                x[0] += np.random.uniform(-5 * s, 5 * s)
+                x[1] += np.random.uniform(-5 * s, 5 * s)
+                x[2] += np.random.uniform(-0.02 * s, 0.02 * s)
+                x[3] += np.random.uniform(-0.02 * s, 0.02 * s)
+                x[4] += np.random.uniform(-1 * s, 1 * s)
+                return x
+
+        mytakestep = MyTakeStep()
+
+        # 自定义界限
+        bounds = np.array(self.min_range+self.max_range).reshape(2,5).T
+
+        # 双重模拟退货
+        attack_result = dual_annealing(func=predict_fn, bounds=bounds, maxiter=niter)  # maxiter = niter
+
+        # basinhopping
+        attack_result = basinhopping(func=predict_fn, x0=xs, callback=callback_fn, take_step=mytakestep,
+                                     accept_test=bounds, niter=niter)
+        # print("global minimum: x = [%d, %d,%.4f,%.4f,%.4f], f(x0) = %.4f" % (attack_result.x[0],
+        # attack_result.x[1],
+        # attack_result.x[2],
+        #  attack_result.x[3],
+        #  attack_result.x[4],
+        #  attack_result.fun))
+
+        return attack_result.x
+
+    """
+
 
     def initialtion(self):
         #print("种群初始化")
@@ -155,6 +206,12 @@ class Population:
                 if V[j] > self.max_range[j] or V[j] < self.min_range[j]:
                     V[j] = self.individuality[i][j]
             self.mutant.append(V)
+
+        """
+        for i in range(self.size):
+            self.mutant.append(self.mymutate(xs=self.individuality[i], niter=3))
+        """
+
 
     def crossover(self):
         #print("交叉")
@@ -195,7 +252,7 @@ class Population:
         return self.Best_individuality
 
 def attack():
-    p = Population(min_range=[0,0,0,0.1,-180], max_range=[224, 224,1,1,180], dim=5, g=8, p_size=50, object_func=obj_func, co=0.8)
+    p = Population(min_range=[0,0,0,0.1,-180], max_range=[224, 224,1,1,180], dim=5, g=20, p_size=50, object_func=obj_func, co=0.8)
     best_x = p.evolution()
     best_attack=alphaBlending(imagepath, watermarkpath, best_x)
     return best_x,best_attack
